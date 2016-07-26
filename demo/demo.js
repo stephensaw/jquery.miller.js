@@ -1,44 +1,49 @@
-$(document).ready(function() {
-		$('#miller').miller({
-				'url': function(id) {
-					if (!id) {
-						return 'data1.json';
-					} else {
-						var data = null;
-
-						$.ajaxSetup({ "async": false });
-
-						$.getJSON('data1.json', function(lines) {
-								data = $.grep(lines, function(line) { return line['id'] == id; });
-							}
-						);
-
-						if (data.length <= 0) {
-							$.getJSON('data2.json', function(lines) {
-									data = $.grep(lines, function(line) { return line['id'] == id; });
-								}
-							);
-						}
-
-						$.ajaxSetup({ "async": true });
-
-						return (!data[0]['parent'] ? 'data3.json' : (Math.random() <= 0.5 ? 'data1.json' : 'data2.json'));
-					}
-				},
-				'toolbar': {
-					'options': {
-						'Select': function(id) { alert('Select node or leaf ' + id); },
-						'Quickview': function(id) { alert('Quickview on node or leaf ' + id); }
-					}
-				},
-				'pane': {
-					'options': {
-						'Add': function(id) { alert('Add to leaf ' + id); },
-						'Update': function(id) { alert('Update leaf ' + id); },
-						'Delete': function(id) { alert('Delete leaf ' + id); }
-					}
-				}
-			}
-		);
+var loader = function (selectedPaths) {
+	if (!selectedPaths) {
+		return $.getJSON('data3.json');
 	}
-);
+
+	var anchorId = '';
+	var anchorIdPath = '|';
+	var groupId = '';
+	var termSetId = '';
+	var termStoreId = '';
+
+	termStoreId = selectedPaths[0].id;
+
+	if (selectedPaths.length >= 2) {
+		groupId = selectedPaths[1].id;
+	}
+
+	if (selectedPaths.length >= 3) {
+		termSetId = selectedPaths[2].id;
+	}
+
+	if (selectedPaths.length < 4) {
+		return $.getJSON('data1.json');
+	}
+
+	anchorId = selectedPaths[selectedPaths.length - 1].id;
+
+	var paths = [];
+
+	for (var i = 3, total = selectedPaths.length; i < total; i++) {
+		paths.push(selectedPaths[i].id);
+	}
+
+	anchorIdPath += paths.join('|');
+
+	console.log("anchorId: " + anchorId);
+	console.log("anchorIdPath: " + anchorIdPath);
+	console.log("groupId: " + groupId);
+	console.log("termSetId: " + termSetId);
+	console.log("termStoreId: " + termStoreId);
+
+	return $.getJSON('data2.json');
+}
+
+$(document).ready(function() {
+	$('#miller').miller({
+		'loader': loader
+	});
+});

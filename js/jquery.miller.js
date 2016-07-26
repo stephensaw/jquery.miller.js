@@ -1,343 +1,275 @@
-(function($) {
- 	var methods = {
-		'getPath': function() {
-			var path = [];
+(function ($) {
+    $.fn.miller = function (mixed) {
+        var miller = this;
+        var hasFocus = false;
+        var currentAjaxRequest = null;
+        var settings = $.extend(true, {
+            'loader': function () {},
+            'async': true,
+            'tabindex': 0,
+            'minWidth': 40,
+            'carroussel': false,
+            'pane': {
+                'options': {}
+            }
+        }, mixed);
 
-			$.each($(this).find('div.path span'), function(key, node) {
-					path.push({ 'id': $(node).data('id'), 'name': $(node).text() });
-				}
-			);
+        if (!miller.attr('tabindex')) {
+            miller.attr('tabindex', settings.tabindex);
+        }
 
-			return path;
-		}
-	};
+        miller
+            .addClass('miller')
+            .focus(function () { hasFocus = true; })
+            .blur(function () { hasFocus = false; });
 
-	$.fn.miller = function(mixed) {
-		if (methods[mixed] ) {
-			return methods[mixed].apply(this, Array.prototype.slice.call(arguments, 1));
-		} else {
-			var miller = this;
-			var hasFocus = false;
-			var currentAjaxRequest = null;
-			var settings = $.extend(true, {
-						'url': function(id) { return id; },
-						'tabindex': 0,
-						'minWidth': 40,
-						'carroussel': false,
-						'toolbar': {
-							'options': {}
-						},
-						'pane': {
-							'options': {}
-						}
-					},
-					mixed
-				)
-			;
+        var path = $('<div>', { 'class': 'path' }).appendTo(miller);
+        var columns = $('<div>', { 'class': 'columns' }).appendTo(miller);
+        var currentLine = null;
 
-			if (!miller.attr('tabindex')) {
-				miller.attr('tabindex', settings.tabindex);
-			}
+        var KEYCODE_LEFT = 37;
+        var KEYCODE_UP = 38;
+        var KEYCODE_RIGHT = 39;
+        var KEYCODE_DOWN = 40;
 
-			miller
-				.addClass('miller')
-				.focus(function() { hasFocus = true; })
-				.blur(function() { hasFocus = false; })
-			;
+        $(document).keypress(function (event) {
+            if (hasFocus && currentLine && event.which != KEYCODE_LEFT && event.which != KEYCODE_UP8 && event.which != KEYCODE_RIGHT && event.which != KEYCODE_DOWN) {
+                var newCurrentLine = currentLine.parent().children().filter(function () { return $(this).text().match(new RegExp('^' + String.fromCharCode(event.which))); }).first();
 
-			var path = $('<div>', { 'class': 'path' })
-				.appendTo(miller)
-			;
+                if (newCurrentLine.length) {
+                    currentLine = newCurrentLine.click();
+                }
+            }
+        });
 
-			var columns = $('<div>', { 'class': 'columns' })
-				.appendTo(miller)
-			;
+        $(document).keydown(function (event) {
+            if (hasFocus && currentLine && (event.which == KEYCODE_LEFT || event.which == KEYCODE_UP || event.which == KEYCODE_RIGHT || event.which == KEYCODE_DOWN)) {
+                var newCurrentLine = [];
+                var scrollTop = currentLine.parent().scrollTop();
 
-			var toolbar = null;
+                switch (event.which) {
+                    case KEYCODE_LEFT:
+                        newCurrentLine = currentLine.parent().prev().prev().find('li.parentSelected');
+                        break;
 
-			if (!$.isEmptyObject(settings.toolbar.options)) {
-				var toolbar = $('<div>', { 'class': 'toolbar' })
-					.appendTo(miller)
-				;
-			};
+                    case KEYCODE_UP:
+                        newCurrentLine = currentLine.prev();
 
-			var currentLine = null;
+                        if (!newCurrentLine.length && settings.carroussel) {
+                            newCurrentLine = currentLine.parent().find('li:last');
+                            scrollTop = newCurrentLine.position().top;
+                        }
 
-			$(document).keypress(function(event) {
-					if (hasFocus && currentLine && event.which != 37 && event.which != 38 && event.which != 39 && event.which != 40) {
-						var newCurrentLine = currentLine.parent().children().filter(function() { return $(this).text().match(new RegExp('^' + String.fromCharCode(event.which))); }).first();
+                        break;
 
-						if (newCurrentLine.length) {
-							currentLine = newCurrentLine.click();
-						}
-					}
-				}
-			);
+                    case KEYCODE_RIGHT:
+                        newCurrentLine = currentLine.parent().next().next().find('li:first');
+                        break;
 
-			$(document).keydown(function(event) {
-					if (hasFocus && currentLine && (event.which == 37 || event.which == 38 || event.which == 39 || event.which == 40)) {
-						var newCurrentLine = [];
-						var scrollTop = currentLine.parent().scrollTop();
+                    case KEYCODE_DOWN:
+                        newCurrentLine = currentLine.next();
 
-						switch (event.which) {
-							case 37:
-								newCurrentLine = currentLine.parent().prev().prev().find('li.parentSelected');
-								break;
+                        if (!newCurrentLine.length && settings.carroussel) {
+                            newCurrentLine = currentLine.parent().find('li:first');
+                            scrollTop = 0;
+                        }
 
-							case 38:
-								newCurrentLine = currentLine.prev();
+                        break;
+                }
 
-								if (!newCurrentLine.length && settings.carroussel) {
-									newCurrentLine = currentLine.parent().find('li:last');
-									scrollTop = newCurrentLine.position().top;
-								}
-								break;
+                if (newCurrentLine.length && !newCurrentLine.parent().hasClass('pane')) {
+                    currentLine = newCurrentLine.click();
+                }
 
-							case 39:
-								newCurrentLine = currentLine.parent().next().next().find('li:first');
-								break;
+                return false;
+            }
+        });
 
-							case 40:
-								newCurrentLine = currentLine.next();
+        var removeNextColumns = function () {
+            var line = $(this);
+            var column = line.parent();
 
-								if (!newCurrentLine.length && settings.carroussel) {
-									newCurrentLine = currentLine.parent().find('li:first');
-									scrollTop = 0;
-								}
-								break;
-						}
+            column.nextAll().slice(1).remove();
+            column.find('li').removeClass('selected parentSelected');
+            line.addClass(line.hasClass('parent') ? 'parentSelected' : 'selected');
 
-						if (newCurrentLine.length && !newCurrentLine.parent().hasClass('pane')) {
-							currentLine = newCurrentLine.click();
-						}
+            var node = $('<span>', { 'text': line.text() })
+                .data('id', line.data('id'))
+                .data('type', line.data('type'))
+                .data('name', line.data('name'))
+                .data('isParent', line.data('isParent'))
+                .click(function () {
+                    columns.children().slice((($(this).index() * 2) + 4)).remove();
+                    columns.children('ul:last').find('li').removeClass('parentSelected');
+                    path.children().slice($(this).index() + 1).remove();
+                }).appendTo(path);
 
-						return false;
-					}
-				}
-			);
+            var child = column.index();
 
-			var removeNextColumns = function() {
-					var line = $(this);
+            child -= (child - (child / 2));
+            path.scrollLeft(node.position().left).children().slice(child, -1).remove();
+        }
 
-					var column = line.parent();
+        var buildColumn = function (lines) {
+            if (lines == null) {
+                $('li.parentLoading').remove();
+            }
 
-					column
-						.nextAll()
-							.slice(1)
-								.remove()
-					;
+            if (currentLine) {
+                var currentColumn = currentLine.parent();
+                var scroll = 0;
+                var scrollTop = currentColumn.scrollTop();
+                var topOfCurrentLine = currentLine.position().top;
 
-					column
-						.find('li')
-							.removeClass('selected parentSelected')
-					;
+                if (topOfCurrentLine < 0) {
+                    scroll = topOfCurrentLine;
+                } else {
+                    var bottomOfCurrentLine = currentLine.position().top + currentLine.height();
+                    var heightOfCurrentColumn = currentColumn.height();
 
-					line.addClass(line.hasClass('parent') ? 'parentSelected' : 'selected');
+                    if (bottomOfCurrentLine > heightOfCurrentColumn) {
+                        scroll = bottomOfCurrentLine - heightOfCurrentColumn;
+                    }
+                }
 
-					var node = $('<span>', { 'text': line.text() })
-						.data('id', line.data('id'))
-						.click(function() {
-								columns
-									.children()
-										.slice((($(this).index() * 2) + 4))
-											.remove()
-								;
-								columns
-									.children('ul:last')
-										.find('li')
-											.removeClass('parentSelected')
-								;
-								path
-									.children()
-										.slice($(this).index() + 1)
-											.remove()
-								;
-							}
-						)
-						.appendTo(path)
-					;
+                currentColumn.scrollTop(scrollTop + scroll);
+            }
 
-					var child = column.index();
+            var width = 0;
+            var lastGrip = columns.children('div.grip:last')[0];
 
-					child -= (child - (child / 2));
+            if (lastGrip) {
+                lastGrip = $(lastGrip);
+                width = lastGrip.position().left + lastGrip.width() + columns.scrollLeft();
+            }
 
-					path
-						.scrollLeft(node.position().left)
-						.children()
-							.slice(child, -1)
-								.remove()
-					;
-				}
-			;
+            if (lines.length <= 0) {
+                var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
 
-			var buildColumn = function(lines) {
-					if (lines == null) {
-						$('li.parentLoading').remove();
-					} else {
-						if (currentLine && toolbar) {
-							toolbar.children().remove();
+                if (!$.isEmptyObject(settings.pane.options)) {
+                    var pane = $('<ul>').css({ 'top': 0, 'left': width }).addClass('pane');
+                    var id = line.data('id');
 
-							$.each(settings.toolbar.options, function(key, callback) {
-									$('<span>', { 'text': key })
-										.click(function() { callback.call(miller, currentLine.data('id')) })
-										.appendTo(toolbar)
-									;
-								}
-							);
-						}
+                    $.each(settings.pane.options, function (key, callback) {
+                        $('<li>', { 'text': key })
+                            .click(function () {
+                                callback.call(miller, { 'id': currentLine.data('id'), 'value': currentLine.text() })
+                            })
+                            .appendTo(pane);
+                    });
 
-						if (currentLine) {
-							var currentColumn = currentLine.parent();
-							var scroll = 0;
-							var scrollTop = currentColumn.scrollTop();
-							var topOfCurrentLine = currentLine.position().top;
+                    columns
+                        .append(pane)
+                        .scrollLeft(width + pane.width());
+                }
+            } else {
+                $('li.parentLoading').addClass('parentSelected');
 
-							if (topOfCurrentLine < 0) {
-								scroll = topOfCurrentLine;
-							} else {
-								var bottomOfCurrentLine = currentLine.position().top + currentLine.height();
-								var heightOfCurrentColumn = currentColumn.height();
+                var column = $('<ul>').css({ 'top': 0, 'left': width });
 
-								if (bottomOfCurrentLine > heightOfCurrentColumn) {
-									scroll = bottomOfCurrentLine - heightOfCurrentColumn;
-								}
-							}
+                $.each(lines, function (id, data) {
+                    buildNode(column, id, data);
+                });
 
-							currentColumn.scrollTop(scrollTop + scroll);
-						}
+                columns
+                    .append(column)
+                    .scrollLeft(width += column.width())
+                    .append(
+                        $('<div>', { 'class': 'grip' })
+                            .css({ 'top': 0, 'left': width })
+                            .mousedown(function (event) {
+                                var x = event.pageX;
+                                var cursor = columns.css('cursor');
 
-						var width = 0;
+                                columns
+                                    .css('cursor', 'col-resize')
+                                    .mousemove(function (event) {
+                                        var delta = event.pageX - x;
+                                        var newWidth = column.width() + delta;
 
-						var lastGrip = columns.children('div.grip:last')[0];
+                                        if (newWidth > settings.minWidth) {
+                                            column
+                                                .width(newWidth)
+                                                .nextAll()
+                                                .each(function () {
+                                                    $(this).css('left', $(this).position().left + delta + columns.scrollLeft());
+                                                });
+                                        }
 
-						if (lastGrip) {
-							lastGrip = $(lastGrip);
-							width = lastGrip.position().left + lastGrip.width() + columns.scrollLeft();
-						}
-						
-						if (lines.length <= 0) {
-							var line = $('li.parentLoading')
-								.removeClass('parent')
-								.addClass('selected')
-							;
+                                        x = event.pageX;
+                                    })
+                                    .mouseup(function () {
+                                        columns.off('mousemove').css('cursor', cursor);
+                                    });
+                            })
+                        );
+            }
+        }
 
-							if (!$.isEmptyObject(settings.pane.options)) {
-								var pane = $('<ul>')
-									.css({ 'top': 0, 'left': width })
-									.addClass('pane')
-								;
+        var buildNode = function (column, id, data) {
+            var line = $('<li>', { 'text': data['name'] })
+                .data('id', data['id'])
+                .data('name', data['name'])
+                .data('isParent', data['isParent'])
+                .click(removeNextColumns)
+                .click(getLines)
+                .appendTo(column);
 
-								var id = line.data('id');
+            if (data['isParent']) {
+                line.addClass('parent');
+            }
 
-								$.each(settings.pane.options, function(key, callback) {
-										$('<li>', { 'text': key })
-											.click(function() { callback.call(miller, currentLine.data('id')) })
-											.appendTo(pane)
-										;
-									}
-								);
+            if (data['type']) {
+                line.attr('data-type', data['type']);
+            }
+        }
 
-								columns
-									.append(pane)
-									.scrollLeft(width + pane.width())
-								;
-							}
-						} else {
-							$('li.parentLoading').addClass('parentSelected');
+        var getLines = function (event) {
+            var selectedLine = $(event.currentTarget);
 
-							var column = $('<ul>')
-								.css({ 'top': 0, 'left': width })
-							;
+            if (!selectedLine.data('isParent')) {
+                return;
+            }
 
-							$.each(lines, function(id, data) {
-									var line = $('<li>', { 'text': data['name'] })
-										.data('id', data['id'])
-										.click(removeNextColumns)
-										.click(getLines)
-										.appendTo(column)
-									;
+            currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
 
-									if (data['parent']) {
-										line.addClass('parent');
-									}
-								}
-							);
+            fetchData(getSelectedPath()).always(function () {
+                currentLine.removeClass('parentLoading');
+            });
+        }
 
-							columns
-								.append(column)
-								.scrollLeft(width += column.width())
-								.append(
-									$('<div>', { 'class': 'grip' })
-										.css({ 'top': 0, 'left': width })
-										.mousedown(function(event) {
-												var x = event.pageX;
-												var cursor = columns.css('cursor');
+        var getSelectedPath =  function () {
+            var path = [];
 
-												columns
-													.css('cursor', 'col-resize')
-													.mousemove(function(event) {
-															var delta = event.pageX - x;
-															var newWidth = column.width() + delta;
+            $.each($(miller).find('div.path span'), function (key, node) {
+                path.push($(node).data());
+            });
 
-															if (newWidth > settings.minWidth) {
-																column
-																	.width(newWidth)
-																	.nextAll()
-																		.each(function() {
-																				$(this).css('left', $(this).position().left + delta + columns.scrollLeft());
-																			}
-																		)
-																;
-															}
+            return path;
+        }
 
-															x = event.pageX;
-														}
-													)
-													.mouseup(function() {
-															columns
-																.off('mousemove')
-																.css('cursor', cursor)
-															;
-														}
-													)
-												;
-											}
-										)
-								)
-							;
-						}
-					}
-				}
-			;
+        var fetchData = function (selectedPaths) {
+            var deferred = $.Deferred();
 
-			var getLines = function(event) {
-					if (currentAjaxRequest) {
-						currentAjaxRequest.abort();
-					}
+            if (settings.async) {
+                loader.call(this, selectedPaths).done(function (data) {
+                    buildColumn(data);
+                    deferred.resolve();
+                })
+                .fail(function (err) {
+                    console.error(err);
+                    deferred.reject();
+                });
+            } else {
+                buildColumn(loader.call(this, selectedPaths));
+                deferred.resolve();
+            }
 
-					currentLine = $(event.currentTarget)
-						.removeClass('parentSelected')
-						.addClass('parentLoading')
-					;
+            return deferred.promise();
+        }
 
-					currentAjaxRequest = $.getJSON(settings.url($(this).data('id')), buildColumn)
-						.always(function() {
-								currentLine
-									.removeClass('parentLoading')
-								;
+        fetchData();
 
-								currentAjaxRequest = null;
-							}
-						)
-						.fail(function() {})
-					;
-
-				}
-			;
-
-			$.getJSON(settings.url(), buildColumn);
-
-			return miller;
-		}
-	};
+        return miller;
+    }
 })(jQuery);
