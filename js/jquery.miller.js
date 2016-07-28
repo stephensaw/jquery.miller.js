@@ -115,88 +115,29 @@
             path.scrollLeft(node.position().left).children().slice(child, -1).remove();
         }
 
-        var getNewColumnWidth = function () {
-			var width = 0;
-            var lastGrip = columns.children('div.grip:last')[0];
-
-            if (lastGrip) {
-                lastGrip = $(lastGrip);
-                width = lastGrip.position().left + lastGrip.width() + columns.scrollLeft();
-            }
-
-            return width;
-        }
-
         var buildColumn = function (lines) {
-            if (lines == null || lines.length <= 0) {
-                $('li.parentLoading').remove();
-            }
+        	if (!lines || lines.length <= 0) {
+        		var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
 
-            if (currentLine) {
-                var currentColumn = currentLine.parent();
-                var scroll = 0;
-                var scrollTop = currentColumn.scrollTop();
-                var topOfCurrentLine = currentLine.position().top;
+        		return;
+        	}
 
-                if (topOfCurrentLine < 0) {
-                    scroll = topOfCurrentLine;
-                } else {
-                    var bottomOfCurrentLine = currentLine.position().top + currentLine.height();
-                    var heightOfCurrentColumn = currentColumn.height();
+    		$('li.parentLoading').addClass('parentSelected');
 
-                    if (bottomOfCurrentLine > heightOfCurrentColumn) {
-                        scroll = bottomOfCurrentLine - heightOfCurrentColumn;
-                    }
+    		var column = $('<ul>');
+    		var grip = buildResizeGrip();
+
+    		columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
+    		
+    		for (var l = 0, totalLines = lines.length; l < totalLines; l++) {
+            	var lineNode = buildNode(column, lines[l]);
+
+            	column.append(lineNode);
+
+            	if (lines[l].children.length > 0) {
+            		lineNode.addClass("parentSelected");
+                	buildColumn(lines[l].children);
                 }
-
-                currentColumn.scrollTop(scrollTop + scroll);
-            }
-
-            var width = getNewColumnWidth();
-
-            if (lines.length <= 0) {
-                var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
-
-                if (!$.isEmptyObject(settings.pane.options)) {
-                    var pane = $('<ul>').css({ 'top': 0, 'left': width }).addClass('pane');
-                    var id = line.data('id');
-
-                    $.each(settings.pane.options, function (key, callback) {
-                        $('<li>', { 'text': key })
-                            .click(function () {
-                                callback.call(miller, { 'id': currentLine.data('id'), 'value': currentLine.text() })
-                            })
-                            .appendTo(pane);
-                    });
-
-                    columns
-                        .append(pane)
-                        .scrollLeft(width + pane.width());
-                }
-            }
-        }
-
-        var buildColumn2 = function (lines) {
-        	if (lines.length <= 0) {
-
-        	} else {
-        		$('li.parentLoading').addClass('parentSelected');
-
-        		var column = $('<ul>');
-        		var grip = buildResizeGrip();
-
-        		columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
-        		
-        		for (var l = 0, totalLines = lines.length; l < totalLines; l++) {
-                	var lineNode = buildNode(column, lines[l]);
-
-                	column.append(lineNode);
-
-                	if (lines[l].children.length > 0) {
-                		lineNode.addClass("parentSelected");
-                    	buildColumn2(lines[l].children);
-                    }
-            	}
         	}
         }
 
@@ -298,14 +239,14 @@
 
             if (settings.async) {         	
             	if (cached) {
-            		buildColumn2(cached);
+            		buildColumn(cached);
             		deferred.resolve();
             		return deferred.promise();
             	}
 
                 loader.call(this, selectedPaths).done(function (data) {
                 	setCache(getCacheKey(selectedPaths), data);
-                    buildColumn2(data);
+                    buildColumn(data);
                     deferred.resolve();
                 })
                 .fail(function (err) {

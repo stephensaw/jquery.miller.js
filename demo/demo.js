@@ -1,6 +1,6 @@
 var loader = function (selectedPaths) {
 	if (!selectedPaths) {
-		return $.getJSON('data1.json');
+		return $.getJSON('data2.json');
 	}
 
 	var anchorId = '';
