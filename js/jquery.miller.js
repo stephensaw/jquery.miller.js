@@ -13,6 +13,11 @@
                 'options': {}
             }
         }, mixed);
+        var cachedData = {};
+
+        this.selected = function () {
+        	return getSelectedPath();
+        }
 
         if (!miller.attr('tabindex')) {
             miller.attr('tabindex', settings.tabindex);
@@ -110,8 +115,20 @@
             path.scrollLeft(node.position().left).children().slice(child, -1).remove();
         }
 
+        var getNewColumnWidth = function () {
+			var width = 0;
+            var lastGrip = columns.children('div.grip:last')[0];
+
+            if (lastGrip) {
+                lastGrip = $(lastGrip);
+                width = lastGrip.position().left + lastGrip.width() + columns.scrollLeft();
+            }
+
+            return width;
+        }
+
         var buildColumn = function (lines) {
-            if (lines == null) {
+            if (lines == null || lines.length <= 0) {
                 $('li.parentLoading').remove();
             }
 
@@ -135,13 +152,7 @@
                 currentColumn.scrollTop(scrollTop + scroll);
             }
 
-            var width = 0;
-            var lastGrip = columns.children('div.grip:last')[0];
-
-            if (lastGrip) {
-                lastGrip = $(lastGrip);
-                width = lastGrip.position().left + lastGrip.width() + columns.scrollLeft();
-            }
+            var width = getNewColumnWidth();
 
             if (lines.length <= 0) {
                 var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
@@ -162,58 +173,66 @@
                         .append(pane)
                         .scrollLeft(width + pane.width());
                 }
-            } else {
-                $('li.parentLoading').addClass('parentSelected');
-
-                var column = $('<ul>').css({ 'top': 0, 'left': width });
-
-                $.each(lines, function (id, data) {
-                    buildNode(column, id, data);
-                });
-
-                columns
-                    .append(column)
-                    .scrollLeft(width += column.width())
-                    .append(
-                        $('<div>', { 'class': 'grip' })
-                            .css({ 'top': 0, 'left': width })
-                            .mousedown(function (event) {
-                                var x = event.pageX;
-                                var cursor = columns.css('cursor');
-
-                                columns
-                                    .css('cursor', 'col-resize')
-                                    .mousemove(function (event) {
-                                        var delta = event.pageX - x;
-                                        var newWidth = column.width() + delta;
-
-                                        if (newWidth > settings.minWidth) {
-                                            column
-                                                .width(newWidth)
-                                                .nextAll()
-                                                .each(function () {
-                                                    $(this).css('left', $(this).position().left + delta + columns.scrollLeft());
-                                                });
-                                        }
-
-                                        x = event.pageX;
-                                    })
-                                    .mouseup(function () {
-                                        columns.off('mousemove').css('cursor', cursor);
-                                    });
-                            })
-                        );
             }
         }
 
-        var buildNode = function (column, id, data) {
+        var buildColumn2 = function (lines) {
+        	if (lines.length <= 0) {
+
+        	} else {
+        		$('li.parentLoading').addClass('parentSelected');
+
+        		var column = $('<ul>');
+        		var grip = buildResizeGrip();
+
+        		columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
+        		
+        		for (var l = 0, totalLines = lines.length; l < totalLines; l++) {
+                	var lineNode = buildNode(column, lines[l]);
+
+                	column.append(lineNode);
+
+                	if (lines[l].children.length > 0) {
+                		lineNode.addClass("parentSelected");
+                    	buildColumn2(lines[l].children);
+                    }
+            	}
+        	}
+        }
+
+        var buildResizeGrip = function (width) {
+        	return $('<div>', { 'class': 'grip' })
+                        .mousedown(function (event) {
+                        	var x = event.pageX;
+                        	var cursor = columns.css('cursor');
+                        	var grip = $(this);
+
+                        	columns
+                        		.css('cursor', 'col-resize')
+                        		.mousemove(function (event) {
+                        			var column = grip.prev();
+                                	var delta = event.pageX - x;
+                                	var newWidth = column.width() + delta;
+
+                                	if (newWidth > settings.minWidth) {
+                                    	column.width(newWidth);
+                                	}
+
+                            		x = event.pageX;
+                            	})
+	                            .mouseup(function () {
+	                                columns.off('mousemove').css('cursor', cursor);
+	                            });
+                    	});
+        }
+
+        var buildNode = function (column, data) {
             var line = $('<li>', { 'text': data['name'] })
                 .data('id', data['id'])
                 .data('name', data['name'])
                 .data('isParent', data['isParent'])
                 .click(removeNextColumns)
-                .click(getLines)
-                .appendTo(column);
+                .click(getLines);
 
             if (data['isParent']) {
                 line.addClass('parent');
@@ -222,6 +241,8 @@
             if (data['type']) {
                 line.attr('data-type', data['type']);
             }
+
+            return line;
         }
 
         var getLines = function (event) {
@@ -248,12 +269,43 @@
             return path;
         }
 
+        var getCacheKey = function (selectedPaths) {
+        	if (!selectedPaths) {
+        		return "";
+        	}
+
+        	var cacheKey = [];
+
+        	for (var i = 0, total = selectedPaths.length; i < total; i++) {
+        		cacheKey.push(selectedPaths[i].id);
+        	}
+
+        	return cacheKey.join('|');
+        }
+
+        var setCache = function (cacheKey, data) {
+        	cachedData[cacheKey] = data;
+        }
+
+        var getCache = function (cacheKey) {
+        	return cachedData[cacheKey];
+        }
+
         var fetchData = function (selectedPaths) {
             var deferred = $.Deferred();
 
-            if (settings.async) {
+            var cached = getCache(getCacheKey(selectedPaths));
+
+            if (settings.async) {         	
+            	if (cached) {
+            		buildColumn2(cached);
+            		deferred.resolve();
+            		return deferred.promise();
+            	}
+
                 loader.call(this, selectedPaths).done(function (data) {
-                    buildColumn(data);
+                	setCache(getCacheKey(selectedPaths), data);
+                    buildColumn2(data);
                     deferred.resolve();
                 })
                 .fail(function (err) {
@@ -261,7 +313,15 @@
                     deferred.reject();
                 });
             } else {
-                buildColumn(loader.call(this, selectedPaths));
+            	if (cached) {
+            		buildColumn(cached);
+            		deferred.resolve();
+            		return deferred.promise();
+            	}
+
+            	var data = loader.call(this, selectedPaths);
+                setCache(getCacheKey(selectedPaths), data);
+                buildColumn(data);
                 deferred.resolve();
             }
 

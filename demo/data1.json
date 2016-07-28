@@ -1,10 +1,10 @@
 [
 	{
-	"id" : "0e1d02db-a012-455e-993d-e207a1b105a7",
-	"type" : "termset",
-	"name": "Term Set 1",
-	"isParent" : true,
-	"children" : []
+		"id" : "0e1d02db-a012-455e-993d-e207a1b105a7",
+		"type" : "termset",
+		"name": "Term Set 1",
+		"isParent" : true,
+		"children" : []
 	},		
 	{
 		"id" : "111d02db-a012-455e-993d-e207a1b10eee",

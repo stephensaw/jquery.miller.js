@@ -83,7 +83,8 @@
 .miller div.columns ul
 {
 	box-shadow: #aaa 4px 0 8px 0px;
-	position: absolute;
+	/*position: absolute;*/
+	display: inline-block;
 	border-right: solid 1px #ddd;
 	padding: 0;
 	margin: 0;
@@ -138,13 +139,13 @@
 .miller div.grip
 {
 	cursor: col-resize;
-	position: absolute;
+	/*position: absolute;*/
 	width: 2px;
 	height: 100%;
-	background-image: url('../images/grip.png');
-	background-color: #000;
+	background-color: #f3f3f3;
 	background-repeat: repeat-y;
 	background-position: 0 0;
+	display: inline-block;
 }
 
 .miller ul.pane

@@ -1,6 +1,6 @@
 var loader = function (selectedPaths) {
 	if (!selectedPaths) {
-		return $.getJSON('data3.json');
+		return $.getJSON('data1.json');
 	}
 
 	var anchorId = '';
@@ -42,8 +42,6 @@ var loader = function (selectedPaths) {
 	return $.getJSON('data2.json');
 }
 
-$(document).ready(function() {
-	$('#miller').miller({
-		'loader': loader
-	});
+var millerControl = $('#miller').miller({
+	'loader': loader
 });
