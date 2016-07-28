@@ -8,7 +8,8 @@
             'async': true,
             'tabindex': 0,
             'minWidth': 40,
-            'carroussel': false
+            'carroussel': false,
+            'showBreadCrumb': false
         }, mixed);
        
         /**
@@ -18,13 +19,19 @@
          */
         var BreadCrumbManager = function (parentContainer) {
             var container = parentContainer;
-            var breadCrumb = $('<div>', { 'class': 'path' }).appendTo(container);
+            var breadCrumb = null;
 
+			breadCrumb = $('<div>', { 'class': 'path' }).appendTo(container);
+	        
 	        /**
 	         * Update the breadcrumb with selected item.
 	         * @param {Object} line - Selected item.
 	         */
             var update = function (line) {
+            	if (!settings.showBreadCrumb) {
+            		return;
+            	}
+
             	var column = line.parent();
 				var node = $('<span>', { 'text': line.text() })
 	                .data('id', line.data('id'))
@@ -287,7 +294,8 @@
                 return;
             }
 
-            currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
+            //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
+            currentLine = selectedLine.addClass('parentLoading');
 
             fetchData(getSelectedPath()).always(function () {
                 currentLine.removeClass('parentLoading');
@@ -301,7 +309,7 @@
         var getSelectedPath =  function () {
             var path = [];
 
-            $.each($(miller).find('div.path span'), function (key, node) {
+            $.each($(miller).find('.parentSelected, .selected'), function (key, node) {
                 path.push($(node).data());
             });
 
