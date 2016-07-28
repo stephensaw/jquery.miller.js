@@ -125,7 +125,11 @@
             .focus(function () { hasFocus = true; })
             .blur(function () { hasFocus = false; });
 
-        var columns = $('<div>', { 'class': 'columns' }).appendTo(miller);
+        var columnsWrapper = $('<div>', { 'class': 'columns-wrapper'});
+        var columns = $('<div>', { 'class': 'columns' }).appendTo(columnsWrapper);
+
+        columnsWrapper.appendTo(miller);
+        
         var currentLine = null;
 
         var KEYCODE_LEFT = 37;
