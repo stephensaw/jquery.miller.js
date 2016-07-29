@@ -68,7 +68,7 @@
              * @returns {string} Cache key that used to retrieve/store cache.
              */
             var getCacheKey = function (selectedPaths) {
-                if (!selectedPaths) {
+                if (!selectedPaths || selectedPaths.length <= 0) {
                     return "";
                 }
 
@@ -78,7 +78,7 @@
                     cacheKey.push(selectedPaths[i].id);
                 }
 
-                return cacheKey.join('|');
+                return '|' + cacheKey.join('|');
             }
 
             /**
@@ -113,7 +113,7 @@
 		 * @returns {Object[]} Get selected path as an array.
 		 */
         miller.selected = function () {
-            return getSelectedPath();
+            return getSelectedPaths();
         }
 
         if (!miller.attr('tabindex')) {
@@ -129,7 +129,7 @@
         var columns = $('<div>', { 'class': 'columns' }).appendTo(columnsWrapper);
 
         columnsWrapper.appendTo(miller);
-        
+
         var currentLine = null;
 
         var KEYCODE_LEFT = 37;
@@ -208,7 +208,7 @@
          * Creating column.
          * @param {Object[]} lines - Array of data to be created as items for the column.
          */
-        var buildColumn = function (lines) {
+        var buildColumn = function (lines, initialize) {
             if (!lines || lines.length <= 0) {
                 var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
 
@@ -220,6 +220,10 @@
             var column = $('<ul>');
             var grip = buildResizeGrip();
 
+            if (typeof(initialize) === 'undefined') {
+            	initialize = false;
+            }
+
             columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
             
             for (var l = 0, totalLines = lines.length; l < totalLines; l++) {
@@ -227,9 +231,15 @@
 
                 column.append(lineNode);
 
-                if (lines[l].children.length > 0) {
-                    lineNode.addClass("parentSelected");
-                    buildColumn(lines[l].children);
+                if (lines[l].children.length > 0 && initialize) {
+                	var cacheKey = cacheManager.getCacheKey(getSelectedPaths());
+
+                	cacheKey = cacheKey + '|' + lineNode.data('id');
+                	
+                	breadCrumbManager.update(lineNode);
+                	cacheManager.setCache(cacheKey, lines[l].children);
+                    lineNode.addClass('parentSelected');
+                    buildColumn(lines[l].children, initialize);
                 }
             }
         }
@@ -301,7 +311,7 @@
             //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
             currentLine = selectedLine.addClass('parentLoading');
 
-            fetchData(getSelectedPath()).always(function () {
+            fetchData(getSelectedPaths()).always(function () {
                 currentLine.removeClass('parentLoading');
             });
         }
@@ -310,7 +320,7 @@
          * Get the path to the selected item in an array.
          * @param {Object[]} Array of object consist of all of their data() properties.
          */
-        var getSelectedPath =  function () {
+        var getSelectedPaths =  function () {
             var path = [];
 
             $.each($(miller).find('.parentSelected, .selected'), function (key, node) {
@@ -327,7 +337,7 @@
         var fetchData = function (selectedPaths) {
             var deferred = $.Deferred();
 
-            var cacheKey = cacheManager.getCacheKey(selectedPaths);
+            var cacheKey = cacheManager.getCacheKey(getSelectedPaths());
             var cached = cacheManager.getCache(cacheKey);
 
             if (settings.async) {           
@@ -338,8 +348,7 @@
                 }
 
                 loader.call(this, selectedPaths).done(function (data) {
-                    cacheManager.setCache(cacheKey, data);
-                    buildColumn(data);
+                    buildColumn(data, true);
                     deferred.resolve();
                 })
                 .fail(function (err) {
@@ -354,8 +363,7 @@
                 }
 
                 var data = loader.call(this, selectedPaths);
-                cacheManager.setCache(cacheKey, data);
-                buildColumn(data);
+                buildColumn(data, true);
                 deferred.resolve();
             }
 

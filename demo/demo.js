@@ -43,5 +43,6 @@ var loader = function (selectedPaths) {
 }
 
 var millerControl = $('#miller').miller({
-	'loader': loader
+	'loader': loader,
+	'showBreadCrumb': true
 });

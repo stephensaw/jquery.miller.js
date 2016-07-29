@@ -109,11 +109,12 @@
 .miller li
 {
 	border: solid 1px #fff;
-	padding-left: 0.5em;
-	padding-right: 0.5em;
+/*	padding-left: 0.5em;
+	padding-right: 0.5em;*/
 	list-style-type: none;
 	cursor: pointer;
 	height: 25px;
+	box-sizing: border-box;
 	line-height: 25px;
 }
 
