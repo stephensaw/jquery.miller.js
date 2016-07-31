@@ -2,48 +2,48 @@
     {
         "id" : "0e1d02db-a012-455e-993d-e207a1b105a7",
         "type" : "termset",
-        "name": "Term Set 1",
+        "name": "词集 1",
         "isParent" : false,
         "children" : []
     },      
     {
         "id" : "111d02db-a012-455e-993d-e207a1b10eee",
         "type" : "termset",
-        "name": "Term Set 2",
+        "name": "词集 2",
         "isParent" : true,
         "children" : [
             {
                 "id" : "123432-a012-455e-993d-e207a1b105a7",
                 "type" : "term",
-                "name": "Term 1",
+                "name": "词 1",
                 "isParent" : false,
                 "children" : []
             },
             {
                 "id" : "335432-a012-455e-993d-e207a1b105a7",
                 "type" : "term",
-                "name": "Term 2",
+                "name": "词 2",
                 "isParent" : false,
                 "children" : []
             },
             {
                 "id" : "dfddf-a012-455e-993d-e207a1b105a7",
                 "type" : "term",
-                "name": "Term 3",
+                "name": "词 3",
                 "isParent" : false,
                 "children" : []
             },
             {
                 "id" : "533452-a012-455e-993d-e207a1b105a7",
                 "type" : "term",
-                "name": "Term 4",
+                "name": "词 4",
                 "isParent" : false,
                 "children" : []
             },
             {
                 "id" : "1d2d32-a012-455e-993d-e207a1b105a7",
                 "type" : "term",
-                "name": "Term 5",
+                "name": "词 5",
                 "isParent" : false,
                 "children" : []
             }]

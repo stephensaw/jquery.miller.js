@@ -1,6 +1,6 @@
 var loader = function (selectedPaths) {
 	if (!selectedPaths) {
-		return $.getJSON('data1.json');
+		return $.getJSON('data4.json');
 	}
 
 	var anchorId = '';
@@ -13,7 +13,7 @@ var loader = function (selectedPaths) {
 
 	if (selectedPaths.length >= 2) {
 		groupId = selectedPaths[1].id;
-	}
+	} 
 
 	if (selectedPaths.length >= 3) {
 		termSetId = selectedPaths[2].id;
@@ -42,7 +42,29 @@ var loader = function (selectedPaths) {
 	return $.getJSON('data2.json');
 }
 
+var creater = function (newValue) {
+	var deferred = $.Deferred();
+
+	var result = {
+        "id" : "AAAbbc2-a012-455e-993d-e207a1b105a7",
+        "type" : "term",
+        "name": newValue,
+        "isParent" : false,
+        "children" : []
+	};
+
+	deferred.resolve(result);
+
+	return deferred.promise();
+}
+
 var millerControl = $('#miller').miller({
 	'loader': loader,
-	'showBreadCrumb': true
+	'creater': creater,
+	'showBreadCrumb': true,
+	'toolbar': {
+		'options': {
+			'Select': function(id) { alert('Select node or leaf ' + id); },
+		}
+	}
 });

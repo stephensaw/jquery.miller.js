@@ -17,6 +17,10 @@
 	user-select: none;
 }
 
+.miller * {
+	box-sizing: border-box;
+}
+
 .miller div.columns-wrapper
 {
     position: absolute;
@@ -118,6 +122,10 @@
 	line-height: 25px;
 }
 
+.miller li.input input[type="text"] {
+	width: 100%;
+}
+
 .miller li.parent
 {
 	background-image: url('../images/chevron-black.png');
@@ -183,4 +191,20 @@
 .miller ul.pane li
 {
 	width: 100%;
+}
+
+.miller li[data-type]:before {
+	position:relative;
+	width: 16px;
+	height: 16px;
+	content: '';
+	display: inline-block;
+}
+
+.miller li[data-type="term"]:before {
+	background: red;
+}
+
+.miller li[data-type="termset"]:before {
+	background: blue;
 }

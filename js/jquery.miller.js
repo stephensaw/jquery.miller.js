@@ -5,6 +5,7 @@
         var currentAjaxRequest = null;
         var settings = $.extend(true, {
             'loader': function () {},
+            'creater': function () {},
             'async': true,
             'tabindex': 0,
             'minWidth': 40,
@@ -64,18 +65,18 @@
 
             /**
              * Get the cache key used to retrieve/store cache from selected path.
-             * @param {Array} selectedPaths - An array of object with 'id' properties.
+             * @param {Array} selectedNodes - An array of elements
              * @returns {string} Cache key that used to retrieve/store cache.
              */
-            var getCacheKey = function (selectedPaths) {
-                if (!selectedPaths || selectedPaths.length <= 0) {
+            var getCacheKey = function (selectedNodes) {
+                if (!selectedNodes || selectedNodes.length <= 0) {
                     return "";
                 }
 
                 var cacheKey = [];
 
-                for (var i = 0, total = selectedPaths.length; i < total; i++) {
-                    cacheKey.push(selectedPaths[i].id);
+                for (var i = 0, total = selectedNodes.length; i < total; i++) {
+                    cacheKey.push(selectedNodes[i].data('id'));
                 }
 
                 return '|' + cacheKey.join('|');
@@ -99,10 +100,19 @@
                 return cachedData[cacheKey];
             }
 
+			/**
+             * Remove the data in the cache with the key provided.
+             * @param {string} cacheKey - Key use to remove the cache.
+             */
+            var removeCache = function (cacheKey) {
+            	cachedData[cacheKey] = null;
+            }
+
             return {
                 getCache: getCache,
                 setCache: setCache,
-                getCacheKey: getCacheKey
+                getCacheKey: getCacheKey,
+                removeCache: removeCache
             }
         }
 
@@ -132,13 +142,37 @@
 
         var currentLine = null;
 
+        //TEMP
+		var toolbar = null;
+
+		if (!$.isEmptyObject(settings.toolbar.options)) {
+			var toolbar = $('<div>', { 'class': 'toolbar' })
+				.appendTo(miller);
+
+			var toolbarOptions = settings.toolbar.options;
+
+			for (var option in toolbarOptions) {
+				if (!toolbarOptions.hasOwnProperty(option)) {
+					continue;
+				}
+				
+				$('<span>', { 'text': toolbarOptions[option].name })
+					.click(function () { 
+						addInputNode(getSelectedNodes());
+					})
+					.appendTo(toolbar);
+			}
+		};
+
         var KEYCODE_LEFT = 37;
         var KEYCODE_UP = 38;
         var KEYCODE_RIGHT = 39;
         var KEYCODE_DOWN = 40;
+        var KEYCODE_ESC = 27;
+        var KEYCODE_ENTER = 13;
 
         $(document).keypress(function (event) {
-            if (hasFocus && currentLine && event.which != KEYCODE_LEFT && event.which != KEYCODE_UP8 && event.which != KEYCODE_RIGHT && event.which != KEYCODE_DOWN) {
+            if (hasFocus && currentLine && event.which != KEYCODE_LEFT && event.which != KEYCODE_UP && event.which != KEYCODE_RIGHT && event.which != KEYCODE_DOWN) {
                 var newCurrentLine = currentLine.parent().children().filter(function () { return $(this).text().match(new RegExp('^' + String.fromCharCode(event.which))); }).first();
 
                 if (newCurrentLine.length) {
@@ -232,7 +266,7 @@
                 column.append(lineNode);
 
                 if (lines[l].children.length > 0 && initialize) {
-                	var cacheKey = cacheManager.getCacheKey(getSelectedPaths());
+                	var cacheKey = cacheManager.getCacheKey(getSelectedNodes());
 
                 	cacheKey = cacheKey + '|' + lineNode.data('id');
                 	
@@ -279,7 +313,7 @@
          * @param {Object[]} data - Array of object consist of all of their data() properties.
          */
         var buildNode = function (column, data) {
-            var line = $('<li>', { 'text': data['name'] })
+            var line = $('<li>', { 'text': data['name'], 'id': data['id'] })
                 .data('id', data['id'])
                 .data('name', data['name'])
                 .data('isParent', data['isParent'])
@@ -311,33 +345,67 @@
             //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
             currentLine = selectedLine.addClass('parentLoading');
 
-            fetchData(getSelectedPaths()).always(function () {
+            fetchData(getSelectedNodes()).always(function () {
                 currentLine.removeClass('parentLoading');
             });
         }
 
 		/**
-         * Get the path to the selected item in an array.
-         * @param {Object[]} Array of object consist of all of their data() properties.
+         * Get the nodees path to the selected item in an array.
+         * @param {Object[]} Array of selected elements.
          */
-        var getSelectedPaths =  function () {
-            var path = [];
+        var getSelectedNodes = function () {
+        	var nodes = [];
 
             $.each($(miller).find('.parentSelected, .selected'), function (key, node) {
-                path.push($(node).data());
+                nodes.push($(node));
             });
 
-            return path;
+            return nodes;
+        }
+
+		/**
+         * Get selected item properties from the nodes.
+         * @param {Object[]} selectedNodes - Array of selected elements.
+         * @param {Object[]} Properties of the selected item.
+         */
+        var getSelectedPathFromNodes = function (selectedNodes) {
+        	if (!selectedNodes || selectedNodes.length <= 0) {
+        		return null;
+        	}
+
+        	var properties = [];
+
+        	for (var i = 0, total = selectedNodes.length; i < total; i++) {
+        		properties.push(selectedNodes[i].data());
+        	}
+        	
+        	return properties;
+        }
+
+		/**
+         * Get selected item properties.
+         * @param {Object} Property of the selected item.
+         */
+        var getSelectedItem = function () {
+        	var paths = getSelectedNodes();
+
+        	if (paths.length <= 0) {
+        		return null;
+        	}
+
+        	return paths[paths.length - 1].data();
         }
 
 		/**
          * Sending request via Loader with the selected paths.
-         * @param {selectedPaths} Selected path array object.
+         * @param {Object[]} selectedPaths - Selected path array object.
          */
-        var fetchData = function (selectedPaths) {
+        var fetchData = function (selectedNodes) {
             var deferred = $.Deferred();
 
-            var cacheKey = cacheManager.getCacheKey(getSelectedPaths());
+            var selectedPaths = getSelectedPathFromNodes(selectedNodes);
+            var cacheKey = cacheManager.getCacheKey(selectedNodes);
             var cached = cacheManager.getCache(cacheKey);
 
             if (settings.async) {           
@@ -368,6 +436,149 @@
             }
 
             return deferred.promise();
+        }
+
+		/**
+         * Create new input item node.
+         * @param {Object[]} selectedNodes - Selected nodes array object.
+         */
+        var addInputNode = function (selectedNodes) {
+        	var lastNode = selectedNodes[selectedNodes.length -1];
+			var cacheKey = cacheManager.getCacheKey(selectedNodes);
+			var column = null;
+
+			cacheManager.removeCache(cacheKey);
+
+        	if (!lastNode.data('isParent')) {
+        		column = addInputNodeToChildNode(lastNode);
+            } else {
+            	column = addInputNodeToParentNode(lastNode);
+        	}
+            
+            var inputNode = buildInputNode(column);
+
+            column.prepend(inputNode);
+            inputNode.find('input[type="text"]').focus();
+        }
+
+		/**
+         * Create new input node for parent node.
+         * @param {Object} lastNode - Selected node.
+         * @returns {Object} Columns with the new node added.
+         */
+        var addInputNodeToParentNode = function (lastNode) {
+        	var	column = lastNode.parent().next().next();
+
+        	return column;
+        }
+
+		/**
+         * Create new input node for child node.
+         * @param {Object} lastNode - Selected node.
+         * @returns {Object} Columns with the new node added.
+         */
+        var addInputNodeToChildNode = function (lastNode) {
+        	lastNode.removeClass('selected').addClass('parent parentSelected');
+
+			var column = $('<ul>');
+           	var grip = buildResizeGrip();
+
+           	columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
+
+           	return column;
+        }
+
+		/**
+         * Create new input textbox for the input node.
+         * @param {Object} column - The column to create the input box in.
+         * @returns {Object} New input node.
+         */
+        var buildInputNode = function (column) {
+        	var inputLine = $('<li>')
+        		.addClass('input')
+                .click(removeNextColumns)
+                .click(getLines);
+
+            var inputBox = $('<input type="text">')
+            	.keyup(function (e) {
+            		e.stopPropagation();
+
+            		if (e.which === KEYCODE_ENTER) {
+            			commitInputNode(e);
+            		} else if (e.which === KEYCODE_ESC) {
+            			dismissInputNode(e);
+            		}
+            	})
+            	.blur(commitInputNode);
+
+			inputLine.append(inputBox);
+
+            return inputLine;
+        }
+
+		/**
+         * Commit the changes in the new input box to the server by using the creater.
+         * @param {Object} e - Event for the textbox.
+         */
+        var commitInputNode = function (e) {
+        	var deferred = $.Deferred();
+			var input = $(e.target);
+
+        	if (input.val().trim().length === 0) {
+        		dismissInputNode(e);
+        	}
+
+        	if (settings.async) {
+        	 	creater.call(this, input.val().trim()).done(function (result) {
+                    updateCreatedItem(e, result);
+                    deferred.resolve();
+                })
+        	} else {
+        		var result = creater.call(this, input.val().trim());
+        		updateCreatedItem(e, result);
+        	}
+
+        	return deferred.promise();
+        }
+
+		/**
+         * Refreshed the newly created item after server responded.
+         * @param {Object} e - Event for the textbox.
+         * @param {Object} result - Properties for newly created item.
+         */
+        var updateCreatedItem = function (e, result) {
+        	var input = $(e.target);
+        	var node = input.parent();
+
+        	node
+        		.text(result.name)
+        		.removeClass('input')
+        		.attr('data-type', result.type);
+        	node.data('id', result.id);
+        	node.data('name', result.name);
+        	node.data('type', result.type);
+        	node.data('isParent', result.isParent);
+        	node.data('children', result.children);
+
+        	input.remove();
+        }
+
+		/**
+         * Dismiss the value for the input textbox.
+         * @param {Object} e - Event for the textbox.
+         */
+        var dismissInputNode = function (e) {
+			var input = $(e.target);
+			var column = input.closest('ul');
+        	var selectedNodes = getSelectedNodes();
+        	var lastNode = selectedNodes[selectedNodes.length - 1];
+
+        	if (column.find('li').length <= 0) {
+        		lastNode.removeClass('parent parentSelected').addClass('selected');
+        		column.remove();
+        	} else {
+        		input.parent().remove();
+        	}
         }
 
         fetchData();
