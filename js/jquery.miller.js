@@ -17,6 +17,22 @@
         }, mixed);
        
         /**
+		 * @returns {Object[]} Get selected path as an array.
+		 */
+        miller.selected = function () {
+            var selectedNodes = getSelectedNodes();
+
+            return getSelectedPathFromNodes(selectedNodes);
+        }
+
+        /**
+		 * Add new child node for the selected node.
+		 */
+        miller.add = function () {
+        	addInputNode(getSelectedNodes());
+        }
+
+        /**
          * Breadcrumb manager.
          * @constructor
          * @param {Object} parentContainer - Parent container to render in.
@@ -138,15 +154,6 @@
         var cacheManager = new CacheManager();
         var breadCrumbManager = new BreadCrumbManager(miller);
 
-        /**
-		 * @returns {Object[]} Get selected path as an array.
-		 */
-        miller.selected = function () {
-            var selectedNodes = getSelectedNodes();
-
-            return getSelectedPathFromNodes(selectedNodes);
-        }
-
         if (!miller.attr('tabindex')) {
             miller.attr('tabindex', settings.tabindex);
         }
@@ -243,38 +250,41 @@
          * Creating column.
          * @param {Object[]} lines - Array of data to be created as items for the column.
          */
-        var buildColumn = function (lines, initialize) {
+        var buildColumn = function (lines) {
             if (!lines || lines.length <= 0) {
                 var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
 
                 return;
             }
 
-            $('li.parentLoading').addClass('parentSelected');
+            var parentNode = $('li.parentLoading');
+
+            parentNode.addClass('parentSelected');
 
             var column = $('<ul>');
             var grip = buildResizeGrip();
+            var cacheKey = cacheManager.getCacheKey(getSelectedNodes());
 
-            if (typeof(initialize) === 'undefined') {
-            	initialize = false;
+            if (!cacheManager.getCache(cacheKey)) {
+            	cacheManager.setCache(cacheKey, lines);
             }
 
             columns.append(column).scrollLeft(grip.width() + column.width()).append(grip);
             
             for (var l = 0, totalLines = lines.length; l < totalLines; l++) {
                 var lineNode = buildNode(column, lines[l]);
-
+            	
+            	cacheKey = cacheKey + '|' + lineNode.data('id');
                 column.append(lineNode);
 
-                if (lines[l].children.length > 0 && initialize) {
-                	var cacheKey = cacheManager.getCacheKey(getSelectedNodes());
+                if (lines[l].children.length > 0) {
+                	if (!cacheManager.getCache(cacheKey)) {
+                		cacheManager.setCache(cacheKey, lines[l].children);                		
+                	}
 
-                	cacheKey = cacheKey + '|' + lineNode.data('id');
-                	
                 	breadCrumbManager.update(lineNode);
-                	cacheManager.setCache(cacheKey, lines[l].children);
                     lineNode.addClass('parentSelected');
-                    buildColumn(lines[l].children, initialize);
+                    buildColumn(lines[l].children);
                 }
             }
         }
@@ -350,7 +360,7 @@
             //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
             currentLine = selectedLine.addClass('parentLoading');
 
-            fetchData(getSelectedNodes()).always(function () {
+            fetchData(getSelectedNodes(), false).always(function () {
                 currentLine.removeClass('parentLoading');
             });
         }
@@ -406,7 +416,7 @@
          * Sending request via Loader with the selected paths.
          * @param {Object[]} selectedPaths - Selected path array object.
          */
-        var fetchData = function (selectedNodes) {
+        var fetchData = function (selectedNodes, initialize) {
             var deferred = $.Deferred();
 
             var selectedPaths = getSelectedPathFromNodes(selectedNodes);
@@ -421,7 +431,7 @@
                 }
 
                 loader.call(this, selectedPaths).done(function (data) {
-                    buildColumn(data, true);
+                    buildColumn(data, initialize);
                     deferred.resolve();
                 })
                 .fail(function (err) {
@@ -430,7 +440,7 @@
                 });
             } else {
                 if (cached) {
-                    buildColumn(cached);
+                    buildColumn(cached, initialize);
                     deferred.resolve();
                     return deferred.promise();
                 }
@@ -604,7 +614,7 @@
         	selector.call(miller, selectedPaths);
         }
 
-        fetchData();
+        fetchData(null, true);
 
         return miller;
     }

@@ -42,7 +42,7 @@ var loader = function (selectedPaths) {
 	return $.getJSON('data2.json');
 }
 
-var creater = function (newValue) {
+var creator = function (newValue) {
 	var deferred = $.Deferred();
 
 	var result = {
@@ -64,7 +64,7 @@ var selector = function (selectedValues) {
 
 var millerControl = $('#miller').miller({
 	'loader': loader,
-	'creater': creater,
+	'creator': creator,
 	'selector': selector,
 	'showBreadCrumb': true,
 });
