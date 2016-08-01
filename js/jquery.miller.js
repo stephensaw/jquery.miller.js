@@ -13,7 +13,7 @@
             'carroussel': false,
             'showBreadCrumb': false,
             'dblClickSelect': true,
-            'showSelectButton': false
+            'allowAdd': true
         }, mixed);
        
         /**
@@ -122,13 +122,13 @@
 		/**
          * Create a select button in the toolbar for selecting.
          */
-        var buildSelectButton = function () {
-			if (!settings.showSelectButton) {
+        var buildAddButton = function () {
+			if (!settings.allowAdd) {
 				return;
 			}
 			var toolbar = $('<div>', { 'class': 'toolbar' }).appendTo(miller);
 
-			$('<span>', { 'text': 'Select' })
+			$('<span>', { 'text': 'Add' })
 				.click(function () { 
 					addInputNode(getSelectedNodes());
 				})
@@ -163,7 +163,7 @@
 
         var currentLine = null;
 
-		buildSelectButton();
+		buildAddButton();
 
         var KEYCODE_LEFT = 37;
         var KEYCODE_UP = 38;
