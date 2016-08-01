@@ -459,10 +459,8 @@
          */
         var addInputNode = function (selectedNodes) {
         	var lastNode = selectedNodes[selectedNodes.length -1];
-			var cacheKey = cacheManager.getCacheKey(selectedNodes);
-			var column = null;
 
-			cacheManager.removeCache(cacheKey);
+			var column = null;
 
         	if (!lastNode.data('isParent')) {
         		column = addInputNodeToChildNode(lastNode);
@@ -541,20 +539,26 @@
 
         	if (input.val().trim().length === 0) {
         		dismissInputNode(e);
+        		return;
         	}
 
         	if (typeof(creator) !== 'function' || !creator) {
         		return;
         	}
 
+        	var cacheKey = cacheManager.getCacheKey(getSelectedNodes());
+
         	if (settings.async) {
         	 	creator.call(this, input.val().trim()).done(function (result) {
                     updateCreatedItem(e, result);
+					cacheManager.removeCache(cacheKey);
+
                     deferred.resolve();
                 })
         	} else {
         		var result = creator.call(this, input.val().trim());
         		updateCreatedItem(e, result);
+        		cacheManager.removeCache(cacheKey);
         	}
 
         	return deferred.promise();

@@ -201,6 +201,7 @@
 	display: inline-block;
 }
 
+/*
 .miller li[data-type="term"]:before {
 	background: red;
 }
@@ -208,3 +209,4 @@
 .miller li[data-type="termset"]:before {
 	background: blue;
 }
+*/
