@@ -67,9 +67,4 @@ var millerControl = $('#miller').miller({
 	'creater': creater,
 	'selector': selector,
 	'showBreadCrumb': true,
-	'toolbar': {
-		'options': {
-			'Select': function(id) { alert('Select node or leaf ' + id); },
-		}
-	}
 });

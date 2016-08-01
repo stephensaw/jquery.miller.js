@@ -12,7 +12,8 @@
             'minWidth': 40,
             'carroussel': false,
             'showBreadCrumb': false,
-            'dblClickSelect': true
+            'dblClickSelect': true,
+            'showSelectButton': false
         }, mixed);
        
         /**
@@ -118,6 +119,22 @@
             }
         }
 
+		/**
+         * Create a select button in the toolbar for selecting.
+         */
+        var buildSelectButton = function () {
+			if (!settings.showSelectButton) {
+				return;
+			}
+			var toolbar = $('<div>', { 'class': 'toolbar' }).appendTo(miller);
+
+			$('<span>', { 'text': 'Select' })
+				.click(function () { 
+					addInputNode(getSelectedNodes());
+				})
+				.appendTo(toolbar);
+		}
+
         var cacheManager = new CacheManager();
         var breadCrumbManager = new BreadCrumbManager(miller);
 
@@ -146,27 +163,7 @@
 
         var currentLine = null;
 
-        //TEMP
-		var toolbar = null;
-
-		if (!$.isEmptyObject(settings.toolbar.options)) {
-			var toolbar = $('<div>', { 'class': 'toolbar' })
-				.appendTo(miller);
-
-			var toolbarOptions = settings.toolbar.options;
-
-			for (var option in toolbarOptions) {
-				if (!toolbarOptions.hasOwnProperty(option)) {
-					continue;
-				}
-				
-				$('<span>', { 'text': toolbarOptions[option].name })
-					.click(function () { 
-						addInputNode(getSelectedNodes());
-					})
-					.appendTo(toolbar);
-			}
-		};
+		buildSelectButton();
 
         var KEYCODE_LEFT = 37;
         var KEYCODE_UP = 38;
@@ -585,7 +582,7 @@
         	var selectedNodes = getSelectedNodes();
         	var lastNode = selectedNodes[selectedNodes.length - 1];
 
-        	if (column.find('li').length <= 0) {
+        	if (column.find('li').length === 1) {
         		lastNode.removeClass('parent parentSelected').addClass('selected');
         		column.remove();
         	} else {
