@@ -58,9 +58,14 @@ var creater = function (newValue) {
 	return deferred.promise();
 }
 
+var selector = function (selectedValues) {
+	console.log(selectedValues);
+}
+
 var millerControl = $('#miller').miller({
 	'loader': loader,
 	'creater': creater,
+	'selector': selector,
 	'showBreadCrumb': true,
 	'toolbar': {
 		'options': {

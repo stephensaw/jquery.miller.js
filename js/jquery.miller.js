@@ -5,12 +5,14 @@
         var currentAjaxRequest = null;
         var settings = $.extend(true, {
             'loader': function () {},
-            'creater': function () {},
+            'creator': function () {},
+            'selector': function () {},
             'async': true,
             'tabindex': 0,
             'minWidth': 40,
             'carroussel': false,
-            'showBreadCrumb': false
+            'showBreadCrumb': false,
+            'dblClickSelect': true
         }, mixed);
        
         /**
@@ -123,7 +125,9 @@
 		 * @returns {Object[]} Get selected path as an array.
 		 */
         miller.selected = function () {
-            return getSelectedPaths();
+            var selectedNodes = getSelectedNodes();
+
+            return getSelectedPathFromNodes(selectedNodes);
         }
 
         if (!miller.attr('tabindex')) {
@@ -319,6 +323,10 @@
                 .data('isParent', data['isParent'])
                 .click(removeNextColumns)
                 .click(getLines);
+
+            if (settings.dblClickSelect) {
+            	line.dblclick(selectNode);
+            }
 
             if (data['isParent']) {
                 line.addClass('parent');
@@ -517,7 +525,7 @@
         }
 
 		/**
-         * Commit the changes in the new input box to the server by using the creater.
+         * Commit the changes in the new input box to the server by using the creator.
          * @param {Object} e - Event for the textbox.
          */
         var commitInputNode = function (e) {
@@ -528,13 +536,17 @@
         		dismissInputNode(e);
         	}
 
+        	if (typeof(creator) !== 'function' || !creator) {
+        		return;
+        	}
+
         	if (settings.async) {
-        	 	creater.call(this, input.val().trim()).done(function (result) {
+        	 	creator.call(this, input.val().trim()).done(function (result) {
                     updateCreatedItem(e, result);
                     deferred.resolve();
                 })
         	} else {
-        		var result = creater.call(this, input.val().trim());
+        		var result = creator.call(this, input.val().trim());
         		updateCreatedItem(e, result);
         	}
 
@@ -579,6 +591,20 @@
         	} else {
         		input.parent().remove();
         	}
+        }
+
+		/**
+         * Trigger the selected node back to the caller via selector.
+         * @param {Object} e - Event for the node.
+         */
+        var selectNode = function (e) {
+        	var selectedPaths = miller.selected();
+
+        	if (typeof (selector) !== 'function' || !selector) {
+        		return;
+        	}
+
+        	selector.call(miller, selectedPaths);
         }
 
         fetchData();
