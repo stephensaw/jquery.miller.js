@@ -430,7 +430,7 @@
                     return deferred.promise();
                 }
 
-                loader.call(this, selectedPaths).done(function (data) {
+                settings.loader.call(this, selectedPaths).done(function (data) {
                     buildColumn(data, initialize);
                     deferred.resolve();
                 })
@@ -445,7 +445,7 @@
                     return deferred.promise();
                 }
 
-                var data = loader.call(this, selectedPaths);
+                var data = settings.loader.call(this, selectedPaths);
                 buildColumn(data, true);
                 deferred.resolve();
             }
@@ -542,21 +542,21 @@
         		return;
         	}
 
-        	if (typeof(creator) !== 'function' || !creator) {
+        	if (typeof(settings.creator) !== 'function' || !settings.creator) {
         		return;
         	}
 
         	var cacheKey = cacheManager.getCacheKey(getSelectedNodes());
 
         	if (settings.async) {
-        	 	creator.call(this, input.val().trim()).done(function (result) {
+        	 	settings.creator.call(this, input.val().trim()).done(function (result) {
                     updateCreatedItem(e, result);
 					cacheManager.removeCache(cacheKey);
 
                     deferred.resolve();
                 })
         	} else {
-        		var result = creator.call(this, input.val().trim());
+        		var result = settings.creator.call(this, input.val().trim());
         		updateCreatedItem(e, result);
         		cacheManager.removeCache(cacheKey);
         	}
@@ -611,11 +611,11 @@
         var selectNode = function (e) {
         	var selectedPaths = miller.selected();
 
-        	if (typeof (selector) !== 'function' || !selector) {
+        	if (typeof (settings.selector) !== 'function' || !settings.selector) {
         		return;
         	}
 
-        	selector.call(miller, selectedPaths);
+        	settings.selector.call(miller, selectedPaths);
         }
 
         fetchData(null, true);
