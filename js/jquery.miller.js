@@ -12,7 +12,8 @@
             'minWidth': 40,
             'carroussel': false,
             'showBreadCrumb': false,
-            'dblClickSelect': true,
+            'clickToSelect': true,
+            'dblClickToSelect': true,
             'showAdd': true,
             'allowAdd': true
         }, mixed);
@@ -332,7 +333,11 @@
                 .click(removeNextColumns)
                 .click(getLines);
 
-            if (settings.dblClickSelect) {
+            if (settings.clickToSelect) {
+            	line.click(selectNode);
+            }
+
+            if (settings.dblClickToSelect) {
                 line.dblclick(selectNode);
             }
 
