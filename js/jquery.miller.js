@@ -20,7 +20,7 @@
         /**
 		 * @returns {Object[]} Get selected path as an array.
 		 */
-        miller.selected = function () {
+        miller.getSelected = function () {
             var selectedNodes = getSelectedNodes();
 
             return getSelectedPathFromNodes(selectedNodes);
@@ -614,7 +614,7 @@
          * @param {Object} e - Event for the node.
          */
         var selectNode = function (e) {
-            var selectedPaths = miller.selected();
+            var selectedPaths = miller.getSelected();
 
             if (typeof (settings.selector) !== 'function' || !settings.selector) {
                 return;
