@@ -252,7 +252,7 @@
          * Creating column.
          * @param {Object[]} lines - Array of data to be created as items for the column.
          */
-        var buildColumn = function (lines) {
+        var buildColumn = function (lines, initialize) {
             if (!lines || lines.length <= 0) {
                 var line = $('li.parentLoading').removeClass('isParent').addClass('selected');
 
@@ -279,14 +279,14 @@
                 cacheKey = cacheKey + '|' + lineNode.data('id');
                 column.append(lineNode);
 
-                if (lines[l].children.length > 0) {
+                if (lines[l].children.length > 0 && initialize) {
                     if (!cacheManager.getCache(cacheKey)) {
                         cacheManager.setCache(cacheKey, lines[l].children);
                     }
 
                     breadCrumbManager.update(lineNode);
                     lineNode.addClass('parentSelected');
-                    buildColumn(lines[l].children);
+                    buildColumn(lines[l].children, initialize);
                 }
             }
         }
@@ -431,7 +431,7 @@
 
             if (settings.async) {
                 if (cached) {
-                    buildColumn(cached);
+                    buildColumn(cached, initialize);
                     deferred.resolve();
                     return deferred.promise();
                 }
