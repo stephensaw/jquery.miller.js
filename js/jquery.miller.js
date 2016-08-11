@@ -30,7 +30,7 @@
         /**
 		 * Add new child node for the selected node.
 		 */
-        miller.add = function () {
+        miller.addNew = function () {
             addInputNode(getSelectedNodes());
         }
 
