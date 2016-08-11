@@ -162,13 +162,26 @@
 
         miller
             .addClass('miller')
-            .focus(function () { hasFocus = true; })
-            .blur(function () { hasFocus = false; });
+            .focus(function () {
+                hasFocus = true;
+            })
+            .blur(function () {
+                hasFocus = false;
+            });
 
-        var columnsWrapper = $('<div>', { 'class': 'columns-wrapper' });
-        var columns = $('<div>', { 'class': 'columns' }).appendTo(columnsWrapper);
+        var columnsWrapper = $('<div>', { 'class': 'columns-wrapper' })
+            .attr('tabindex', '0')
+            .focus(function () {
+                miller.focus();
+            })
+            .appendTo(miller);
 
-        columnsWrapper.appendTo(miller);
+        var columns = $('<div>', { 'class': 'columns' })
+            .attr('tabindex', '0')
+            .focus(function () {
+                miller.focus();
+            })
+            .appendTo(columnsWrapper);
 
         var currentLine = null;
 
@@ -245,6 +258,8 @@
             column.find('li').removeClass('selected parentSelected');
             line.addClass(line.hasClass('parent') ? 'parentSelected' : 'selected');
 
+            currentLine = line;
+
             breadCrumbManager.update(line);
         }
 
@@ -286,6 +301,7 @@
 
                     breadCrumbManager.update(lineNode);
                     lineNode.addClass('parentSelected');
+                    currentLine = lineNode;
                     buildColumn(lines[l].children, initialize);
                 }
             }
@@ -334,7 +350,7 @@
                 .click(getLines);
 
             if (settings.clickToSelect) {
-            	line.click(selectNode);
+                line.click(selectNode);
             }
 
             if (settings.dblClickToSelect) {
@@ -359,12 +375,15 @@
         var getLines = function (event) {
             var selectedLine = $(event.currentTarget);
 
+            //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
+            currentLine = selectedLine;
+            miller.focus();
+
             if (!selectedLine.data('isParent')) {
                 return;
             }
 
-            //currentLine = selectedLine.removeClass('parentSelected').addClass('parentLoading');
-            currentLine = selectedLine.addClass('parentLoading');
+            selectedLine.addClass('parentLoading');
 
             fetchData(getSelectedNodes(), false).always(function () {
                 currentLine.removeClass('parentLoading');
