@@ -365,6 +365,10 @@
                 line.attr('data-type', data['type']);
             }
 
+            if (data['selected']) {
+                line.addClass(data['isParent'] ? 'parentSelected' : 'selected');
+            }
+
             return line;
         }
 
