@@ -16,7 +16,7 @@
             'dblClickToSelect': true,
             'showAdd': true,
             'allowAdd': true,
-            'insertableNodeTypes': ['terms','term']
+            'insertableNodeTypes': []
         }, mixed);
 
         /**
