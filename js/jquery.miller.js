@@ -7,6 +7,7 @@
             'loader': function () { },
             'creator': function () { },
             'selector': function () { },
+            'selectedIds': [],
             'async': true,
             'tabindex': 0,
             'minWidth': 40,
@@ -366,8 +367,8 @@
                 line.attr('data-type', data['type']);
             }
 
-            if (data['selected']) {
-                line.addClass(data['isParent'] ? 'parentSelected' : 'selected');
+            if (settings.selectedIds.indexOf(data['id']) >= 0) {
+            	line.addClass(data['isParent'] ? 'parentSelected' : 'selected');
             }
 
             return line;
