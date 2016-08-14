@@ -15,7 +15,8 @@
             'clickToSelect': true,
             'dblClickToSelect': true,
             'showAdd': true,
-            'allowAdd': true
+            'allowAdd': true,
+            'insertableNodeTypes': ['terms','term']
         }, mixed);
 
         /**
@@ -492,6 +493,10 @@
             }
 
             var lastNode = selectedNodes[selectedNodes.length - 1];
+
+            if (settings.insertableNodeTypes.indexOf(lastNode.data('type')) == -1) {
+                return;
+            }
 
             var column = null;
 
